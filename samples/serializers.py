@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from samples.models import AuditLog, Sample
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -14,3 +16,30 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class AuditLogSerializer(serializers.ModelSerializer):
+    actor_username = serializers.CharField(source='actor.username', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = ['id', 'actor_username', 'action', 'timestamp']
+
+class SampleSerializer(serializers.ModelSerializer):
+    owner_username = serializers.CharField(source='owner.username', read_only=True)
+    audit_logs = AuditLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Sample
+        fields = [
+            'id', 
+            'sample_id', 
+            'name', 
+            'owner_username',
+            'status', 
+            'created_at', 
+            'updated_at',
+            'audit_logs'
+        ]
+        
+    def create(self, validated_data):
+        return Sample.objects.create(**validated_data)
