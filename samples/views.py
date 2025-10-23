@@ -2,7 +2,8 @@ from django.contrib.auth.models import User
 from rest_framework import generics, viewsets, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializers import UserSerializer, SampleSerializer
+from rest_framework.views import APIView
+from .serializers import UserSerializer, SampleSerializer, ReadOnlyUserSerializer
 from .models import Sample, AuditLog
 
 # Create your views here.
@@ -54,3 +55,13 @@ class SampleViewSet(viewsets.ModelViewSet):
                 actor=self.request.user,
                 action=f"Status changed from '{old_status}' to '{sample.status}'."
             )
+
+class UserDetailView(APIView):
+    """
+    API endpoint to get the current logged-in user's details.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        serializer = ReadOnlyUserSerializer(request.user)
+        return Response(serializer.data)

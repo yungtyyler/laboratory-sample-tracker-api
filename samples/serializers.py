@@ -16,6 +16,14 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+class ReadOnlyUserSerializer(serializers.ModelSerializer):
+    """
+    A serializer for reading user data (no password)
+    """
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
     
 class AuditLogSerializer(serializers.ModelSerializer):
     actor_username = serializers.CharField(source='actor.username', read_only=True)
