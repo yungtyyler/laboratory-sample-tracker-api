@@ -83,11 +83,12 @@ WSGI_APPLICATION = 'laboratory_sample_tracker.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+DATABASE_URL = os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}')
 
 DATABASES = {
     'default': dj_database_url.parse(
-        str(os.environ.get('DATABASE_URL')),
-        conn_max_age=600 
+        DATABASE_URL,
+        conn_max_age=600
     )
 }
 
