@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
-from rest_framework import generics, viewsets, status
+from django.forms import ValidationError
+from rest_framework import generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, SampleSerializer, ReadOnlyUserSerializer
-from .models import Sample, AuditLog
+from .serializers import UserSerializer, SampleSerializer, ReadOnlyUserSerializer, TestSerializer
+from .models import Sample, AuditLog, Test
 
 # Create your views here.
 
@@ -22,13 +23,13 @@ class SampleViewSet(viewsets.ModelViewSet):
     """
     serializer_class = SampleSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Sample.objects.all()
+    # queryset = Sample.objects.all()
 
     def get_queryset(self): # type: ignore
         """
         This view should only return samples owned by the currently authenticated user.
         """
-        return Sample.objects.filter(owner=self.request.user)
+        return Sample.objects.filter(owner=self.request.user).prefetch_related('tests', 'audit_logs')
 
     def perform_create(self, serializer):
         """
@@ -55,6 +56,37 @@ class SampleViewSet(viewsets.ModelViewSet):
                 actor=self.request.user,
                 action=f"Status changed from '{old_status}' to '{sample.status}'."
             )
+
+class TestViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for viewing and editing tests associated with a sample.
+    """
+    serializer_class = TestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self): # type: ignore
+        """
+        This view should only return tests for samples owned by the current user.
+        """
+        sample_pk = self.kwargs['sample_pk']
+        
+        return Test.objects.filter(
+            sample__pk=sample_pk, 
+            sample__owner=self.request.user
+        )
+
+    def perform_create(self, serializer):
+        """
+        Associate the new test with the sample from the URL.
+        """
+        sample_pk = self.kwargs['sample_pk']
+
+        try:
+            sample = Sample.objects.get(pk=sample_pk, owner=self.request.user)
+        except Sample.DoesNotExist:
+            raise ValidationError("Sample not found or you do not have permission.")
+            
+        serializer.save(sample=sample)
 
 class UserDetailView(APIView):
     """

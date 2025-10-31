@@ -26,6 +26,34 @@ class Sample(models.Model):
 
     def __str__(self):
         return f"{self.sample_id} ({self.name})"
+    
+class TestStatus(models.TextChoices):
+    PENDING = 'Pending', 'Pending',
+    IN_PROGRESS = 'In Progress', 'In Progress',
+    IN_REVIEW = 'In Review', 'In Review',
+    COMPLETED = 'Completed', 'Completed'
+
+class Test(models.Model):
+    """
+    Represents a single test to be performed on a sample.
+    """
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name="tests")
+    name = models.CharField(max_length=100)
+    status = models.CharField(
+        max_length=20,
+        choices=TestStatus.choices,
+        default=TestStatus.PENDING
+    )
+
+    analyst = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tests_assigned")
+    result_text = models.CharField(max_length=255, null=True, blank=True)
+    result_numeric = models.FloatField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} for {self.sample.sample_id}"
 
 class AuditLog(models.Model):
     """
