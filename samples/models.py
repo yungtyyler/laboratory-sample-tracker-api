@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -27,25 +28,36 @@ class Sample(models.Model):
     def __str__(self):
         return f"{self.sample_id} ({self.name})"
     
-class TestStatus(models.TextChoices):
+class TaskStatus(models.TextChoices):
     PENDING = 'Pending', 'Pending',
     IN_PROGRESS = 'In Progress', 'In Progress',
     IN_REVIEW = 'In Review', 'In Review',
     COMPLETED = 'Completed', 'Completed'
 
-class Test(models.Model):
+class TaskPriotityLevels(models.TextChoices):
+    HIGH = 'High', 'High',
+    MEDIUM = 'Medium', 'Medium',
+    LOW = 'Low', 'Low',
+
+class Task(models.Model):
     """
     Represents a single test to be performed on a sample.
     """
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name="tests")
+    sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name="tasks")
     name = models.CharField(max_length=100)
     status = models.CharField(
         max_length=20,
-        choices=TestStatus.choices,
-        default=TestStatus.PENDING
+        choices=TaskStatus.choices,
+        default=TaskStatus.PENDING
     )
+    priority = models.CharField(
+        max_length=20,
+        choices=TaskPriotityLevels.choices,
+        default=TaskPriotityLevels.MEDIUM
+    )
+    due_date = models.DateField(default=(date.today() + timedelta(weeks=1)))
 
-    analyst = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tests_assigned")
+    analyst = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks_assigned")
     result_text = models.CharField(max_length=255, null=True, blank=True)
     result_numeric = models.FloatField(null=True, blank=True)
     

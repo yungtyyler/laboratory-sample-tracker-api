@@ -4,8 +4,8 @@ from rest_framework import generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, SampleSerializer, ReadOnlyUserSerializer, TestSerializer
-from .models import Sample, AuditLog, Test
+from .serializers import UserSerializer, SampleSerializer, ReadOnlyUserSerializer, TaskSerializer
+from .models import Sample, AuditLog, Task
 
 # Create your views here.
 
@@ -29,7 +29,7 @@ class SampleViewSet(viewsets.ModelViewSet):
         """
         This view should only return samples owned by the currently authenticated user.
         """
-        return Sample.objects.filter(owner=self.request.user).prefetch_related('tests', 'audit_logs')
+        return Sample.objects.filter(owner=self.request.user).prefetch_related('tasks', 'audit_logs')
 
     def perform_create(self, serializer):
         """
@@ -57,11 +57,11 @@ class SampleViewSet(viewsets.ModelViewSet):
                 action=f"Status changed from '{old_status}' to '{sample.status}'."
             )
 
-class TestViewSet(viewsets.ModelViewSet):
+class TaskViewSet(viewsets.ModelViewSet):
     """
     API endpoint for viewing and editing tests associated with a sample.
     """
-    serializer_class = TestSerializer
+    serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self): # type: ignore
@@ -70,7 +70,7 @@ class TestViewSet(viewsets.ModelViewSet):
         """
         sample_pk = self.kwargs['sample_pk']
         
-        return Test.objects.filter(
+        return Task.objects.filter(
             sample__pk=sample_pk, 
             sample__owner=self.request.user
         )

@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class LimsConfig(AppConfig):
+class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'lims'
+    name = 'core'

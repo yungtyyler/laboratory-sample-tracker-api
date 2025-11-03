@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-
-from samples.models import AuditLog, Sample, Test
+from samples.models import AuditLog, Sample, Task
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,15 +31,17 @@ class AuditLogSerializer(serializers.ModelSerializer):
         model = AuditLog
         fields = ['id', 'actor_username', 'action', 'timestamp']
 
-class TestSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     analyst_username = serializers.CharField(source='analyst.username', read_only=True, allow_null=True)
 
     class Meta:
-        model = Test
+        model = Task
         fields = [
             'id', 
             'name', 
             'status', 
+            'priority',
+            'due_date',
             'analyst_username', 
             'result_text', 
             'result_numeric', 
@@ -52,7 +53,7 @@ class TestSerializer(serializers.ModelSerializer):
 class SampleSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     audit_logs = AuditLogSerializer(many=True, read_only=True)
-    tests = TestSerializer(many=True, read_only=True)
+    tasks = TaskSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sample
@@ -65,7 +66,7 @@ class SampleSerializer(serializers.ModelSerializer):
             'created_at', 
             'updated_at',
             'audit_logs',
-            'tests'
+            'tasks'
         ]
         
     def create(self, validated_data):
