@@ -32,23 +32,29 @@ class AuditLogSerializer(serializers.ModelSerializer):
         fields = ['id', 'actor_username', 'action', 'timestamp']
 
 class TaskSerializer(serializers.ModelSerializer):
+    analyst = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), 
+        allow_null=True,  # Allows tasks to be unassigned
+        required=False
+    )
+    # We still want to see the username when we READ a task
     analyst_username = serializers.CharField(source='analyst.username', read_only=True, allow_null=True)
+    due_date = serializers.DateField(
+        format="%Y-%m-%d",  # type: ignore
+        input_formats=["%Y-%m-%d"], 
+        allow_null=True, 
+        required=False
+    )
 
     class Meta:
         model = Task
         fields = [
-            'id', 
-            'name', 
-            'status', 
-            'priority',
-            'due_date',
-            'analyst_username', 
-            'result_text', 
-            'result_numeric', 
-            'created_at', 
-            'updated_at'
+            'id', 'name', 'status', 'priority', 'due_date',
+            'analyst', # This is for WRITING (takes an ID)
+            'analyst_username', # This is for READING
+            'result_text', 'result_numeric',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ('analyst_username', 'created_at', 'updated_at')
 
 class SampleSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)

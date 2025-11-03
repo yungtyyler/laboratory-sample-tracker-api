@@ -34,33 +34,46 @@ class TaskStatus(models.TextChoices):
     IN_REVIEW = 'In Review', 'In Review',
     COMPLETED = 'Completed', 'Completed'
 
-class TaskPriotityLevels(models.TextChoices):
+class TaskPriority(models.TextChoices):
     HIGH = 'High', 'High',
     MEDIUM = 'Medium', 'Medium',
     LOW = 'Low', 'Low',
 
 class Task(models.Model):
     """
-    Represents a single test to be performed on a sample.
+    Represents a single unit of work associated with a Sample.
+    This could be a synthesis step, a QC test, a purification, etc.
+    This is the core of the "backlog".
     """
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name="tasks")
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255, blank=False, null=False)
+    
     status = models.CharField(
         max_length=20,
         choices=TaskStatus.choices,
         default=TaskStatus.PENDING
     )
-    priority = models.CharField(
-        max_length=20,
-        choices=TaskPriotityLevels.choices,
-        default=TaskPriotityLevels.MEDIUM
-    )
-    due_date = models.DateField(default=(date.today() + timedelta(weeks=1)))
-
-    analyst = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks_assigned")
-    result_text = models.CharField(max_length=255, null=True, blank=True)
-    result_numeric = models.FloatField(null=True, blank=True)
     
+    priority = models.CharField(
+        max_length=10,
+        choices=TaskPriority.choices,
+        default=TaskPriority.MEDIUM
+    )
+    
+    due_date = models.DateField(null=True, blank=True)
+    
+    analyst = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,  # Allows for unassigned tasks
+        blank=True, 
+        related_name="tasks"
+    )
+
+    # Fields for results
+    result_text = models.CharField(max_length=255, null=True, blank=True)
+    result_numeric = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

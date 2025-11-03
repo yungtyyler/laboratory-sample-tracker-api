@@ -58,34 +58,30 @@ class SampleViewSet(viewsets.ModelViewSet):
             )
 
 class TaskViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for viewing and editing tests associated with a sample.
-    """
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_sample(self):
+        """Helper function to get the parent sample."""
+        try:
+            sample = Sample.objects.get(
+                pk=self.kwargs['sample_pk'], owner=self.request.user
+            )
+            return sample
+        except Sample.DoesNotExist:
+            raise ValidationError("Sample not found.")
+
     def get_queryset(self): # type: ignore
-        """
-        This view should only return tests for samples owned by the current user.
-        """
-        sample_pk = self.kwargs['sample_pk']
-        
-        return Task.objects.filter(
-            sample__pk=sample_pk, 
-            sample__owner=self.request.user
-        )
+        """This view should only return tasks for the specified sample."""
+        sample = self.get_sample()
+        return Task.objects.filter(sample=sample)
 
     def perform_create(self, serializer):
         """
-        Associate the new test with the sample from the URL.
+        Link the new task to the sample from the URL.
+        The serializer now handles the 'analyst' ID automatically.
         """
-        sample_pk = self.kwargs['sample_pk']
-
-        try:
-            sample = Sample.objects.get(pk=sample_pk, owner=self.request.user)
-        except Sample.DoesNotExist:
-            raise ValidationError("Sample not found or you do not have permission.")
-            
+        sample = self.get_sample()
         serializer.save(sample=sample)
 
 class UserDetailView(APIView):
